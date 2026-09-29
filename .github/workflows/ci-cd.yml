@@ -1,0 +1,40 @@
+name: CI/CD Pipeline - Donantes Module
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test_and_coverage:
+    name: Pruebas Unitarias y Cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar pruebas y verificar cobertura >= 80%
+        run: npx jest --coverage --coverageThreshold='{"global":{"lines":80}}'
+        env:
+          NODE_ENV: test
+          JWT_SECRET: secreto_de_prueba_github_actions
+
+  build:
+    name: Construcción de Contenedor Docker
+    needs: test_and_coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Construir imagen Docker
+        run: docker build -t modulo-donantes:${{ github.sha }} .
